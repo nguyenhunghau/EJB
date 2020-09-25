@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+
+      xmlns:f="http://java.sun.com/jsf/core"
+
+      xmlns:h="http://java.sun.com/jsf/html"
+
+      xmlns:rich="http://richfaces.org/rich"
+      xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+
+      xmlns:a4j="http://richfaces.org/a4j">
+    <h:head>
+        <title>Simple CRUD</title>
+    </h:head>
+
+    <h:body>
+        <rich:panel>
+            <h3>List Users</h3>
+            <h:form rendered="#{not empty users.userList}">
+                <rich:extendedDataTable value="#{users.userList}" id="table" var="item" filterVar="filterVal">
+
+                    <f:facet name="noData">
+                        Nothing found
+                    </f:facet>
+
+                    <rich:column><f:facet name="header">Id</f:facet>#{item.id}</rich:column>
+
+                    <rich:column sortBy="#{item.userName}" filterExpression="#{empty filterVal or fn:startsWith(item.name, filterVal)}"
+                                 filterValue="#{dataFilteringBean.name}">
+                        <f:facet name="header">Name</f:facet>#{item.userName}
+                    </rich:column>
+
+
+                    <rich:column  filterExpression="#{empty filterVal or fn:startsWith(item.mobile, filterVal)}" filterValue="#{dataFilteringBean.mobile}">
+                        <f:facet name="header">Mobile</f:facet>
+                        <h:outputText id="user-name" value="#{item.mobile}"></h:outputText>
+                    </rich:column>
+
+                    <rich:column filterValue="#{dataFilteringBean.email}"
+                                 filterExpression="#{fn:containsIgnoreCase(item.email, dataFilteringBean.email)}"
+                                 filterType="custom">
+                        <f:facet name="header">
+                            <h:panelGroup>
+                                <h:outputText value="Email"/>
+                                <h:inputText value="#{dataFilteringBean.email}">
+                                    <a4j:ajax event="keyup" render="table" execute="@this"/>
+                                </h:inputText>
+                            </h:panelGroup>
+                        </f:facet>
+                        <h:outputText value="#{item.email}"/>
+                    </rich:column>
+
+
+
+                    <rich:column><f:facet name="header">Faculty</f:facet>#{item.faculty}</rich:column>
+                    <!--<rich:column><f:facet name="header">Faculties</f:facet>{item.faculties}</rich:column>-->
+                    <rich:column><f:facet name="header">Faculties</f:facet>#{item.faculties}</rich:column>
+
+                    <rich:column>
+                        <h:commandButton value="edit" action="#{users.editUserss()}">
+                            <f:setPropertyActionListener target="#{users.editUser}" value="#{item}"/>
+                        </h:commandButton>
+                    </rich:column>
+
+                    <!--                    <rich:column>
+                                            <h:commandButton value="delete" action="{users.deleteUser(item)}">
+                                            </h:commandButton>
+                                        </rich:column>-->
+
+                    <!--                    Delete code-->
+
+                    <h:column>
+
+                        <h:commandButton value="Delete">  
+                            <rich:componentControl target="popup" operation="show" />  
+                        </h:commandButton>  
+                        <rich:popupPanel id="popup" modal="false" autosized="true" resizeable="false">  
+                            <f:facet name="header">  
+                                <h:outputText value="Are you sure you want to delete?" />  
+                            </f:facet>  
+                            <f:facet name="controls">  
+                                <h:graphicImage value="/images/close.png" style="cursor:pointer" onclick="#{rich:component('popup')}.hide()" height="10px" width="10px"/>  
+                            </f:facet>  
+                            <p>  
+                                Delete Reason : <h:inputText value = "#{users.deleteReason}" ></h:inputText>
+
+                                <h:commandButton value="delete" action="#{users.deleteUser(item)}" onclick="#{rich:component('popup')}.hide()">
+                                    <f:setPropertyActionListener target="#{users.deleteId}" value="#{item.id}"/>
+                                    <f:setPropertyActionListener target="#{users.deletedName}" value="#{item.userName}"/>
+                                </h:commandButton>
+                            </p>  
+                        </rich:popupPanel>  
+                    </h:column>
+
+                </rich:extendedDataTable>
+            </h:form>
+        </rich:panel>
+
+
+
+        <h:panelGroup rendered="#{empty users.userList}">
+            <p>No Users! Please add users.</p>
+        </h:panelGroup>
+
+        <rich:panel id="panel">
+            <h3>Add student</h3>
+            <h:form>
+                <p>Name: <rich:inplaceInput id="name" value="#{users.user.userName}" validatorMessage="Input name is required" defaultLabel="Input your name ">
+                        <f:validateRequired />
+                        <rich:validator/>
+                    </rich:inplaceInput>
+                    <rich:message for="name" />
+                </p>
+
+
+                <p>Mobile: <h:inputText id="mobile" label="Mobile No."  value="#{users.user.mobile}" validatorMessage="Mobile number is invalid">
+                        <f:convertNumber integerOnly="true" type="number"/>
+                        <f:validateLength minimum="10" maximum="10" />
+
+                    </h:inputText>
+                    <rich:message for="mobile" />
+                </p>
+
+                <p>Email: <h:inputText id="email" value="#{users.user.email}" required="true" label="Email" validatorMessage="Email is not valid">
+                        <f:validateRegex pattern="[\w\.-]*[a-zA-Z0-9_]@[\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]" />
+                    </h:inputText>
+                    <rich:message for="email" />
+                </p>
+
+
+
+
+
+                <h:panelGroup id="dropdown">
+                    <p>Faculty: 
+
+                        <rich:inplaceSelect id="faculty" value = "#{users.user.faculty}" defaultLabel = "Click to Select Faculty" validatorMessage="Please select anyone faculty">
+                            <f:validateRequired/>
+                            <f:selectItems value = "#{users.SubJectList()}"></f:selectItems>   
+                            <f:ajax render="dropdown" />
+                        </rich:inplaceSelect>
+                        <rich:message for="faculty" />
+
+                        <!--faculties haru rakhne-->
+                        <h:panelGroup rendered="#{users.user.faculty == 'physics'}">
+                            <p>You've selected physics.</p>
+                            <h:selectManyCheckbox value="#{users.faculties}" >
+
+                                <f:selectItem itemValue="physics 1" />
+                                <f:selectItem itemValue="physics 2" />
+                                <f:selectItem itemValue="physics 3" />
+                            </h:selectManyCheckbox>
+                        </h:panelGroup>
+
+                        <h:panelGroup rendered="#{users.user.faculty == 'chemistry'}">
+                            <p>You've selected chemisty.</p>
+                            <h:selectManyCheckbox value="#{users.faculties}">
+                                <f:selectItem itemValue="chemistry 1" />
+                                <f:selectItem itemValue="chemistry 2" />
+                                <f:selectItem itemValue="chemistry 3" />
+                            </h:selectManyCheckbox>
+                        </h:panelGroup>
+
+                        <h:panelGroup rendered="#{users.user.faculty == 'math'}">
+                            <p>You've selected math.</p>
+                            <h:selectManyCheckbox value="#{users.faculties}">
+                                <f:selectItem itemValue="math 1" />
+                                <f:selectItem itemValue="math 2" />
+                                <f:selectItem itemValue="math 3" />
+                            </h:selectManyCheckbox>
+                        </h:panelGroup>
+
+                    </p> 
+                </h:panelGroup>
+
+                <p>
+                    <h:commandButton value="add" action="#{users.addUser()}">
+                        <!--<f:setPropertyActionListener target="{users.faculties}" value="{users.user.faculties}"/>-->
+                    </h:commandButton>
+
+                    <!--                    <h:commandButton value="reset" action="{simpleCrudBean.resetAdd}"/>-->
+
+
+                </p>
+
+                <!--popup panel-->
+
+                <h:form>
+
+                    <rich:popupPanel id="popup" modal="false" autosized="true" resizeable="false" show="#{not empty users.exceptions}">
+                        <f:facet name="header">
+                            <h:outputText value="Exception Message" />
+                        </f:facet>
+                        <f:facet name="controls">
+                            <h:outputLink value="#" onclick="#{rich:component('popup')}.hide(); return false;" style="color: inherit">
+                                X
+                            </h:outputLink>
+                        </f:facet>
+                        <p>The user with the email address already existed.</p>
+
+                        <p>
+
+
+                            <h:commandButton value="Ok Botton" action="#{users.removeExceptions()}" onclick="#{rich:component('popup')}.hide()"/> 
+
+                        </p>
+                    </rich:popupPanel>
+                </h:form>
+
+                <rich:tooltip value="Please Enter Name " target="name"/>
+                <rich:tooltip value="Please Enter Email " target="email"/>
+                <rich:tooltip value="Please Enter Mobile " target="mobile"/>
+                <rich:tooltip value="Please Select Faculty " target="faculty"/>
+            </h:form>
+        </rich:panel>
+
+        <!--edit garne-->
+
+        <h:panelGroup>
+            <h:form>
+
+                <h:commandButton value="View All data" action="viewAllData" />
+                <h:commandButton value="View deleted data" action="deletedUser" />
+
+            </h:form>
+        </h:panelGroup>
+
+    </h:body>
+</html>
